@@ -3,8 +3,8 @@ import { api } from "../../../../convex/_generated/api";
 import { useCallback, useMemo, useState } from "react";
 import { Doc, Id } from "../../../../convex/_generated/dataModel";
 
-type RequestType = { id: Id<"workspaces"> };
-type ResponseType = Id<"workspaces"> | null;
+type RequestType = { name: string; workspaceId: Id<"workspaces"> };
+type ResponseType = Id<"channels"> | null;
 
 type Options = {
     onSuccess?: (data: ResponseType) => void;
@@ -14,7 +14,7 @@ type Options = {
     
 };
 
-export const useRemoveWorkspace = () => {
+export const useCreateChannel = () => {
     const [data, setData] = useState<ResponseType>(null);
     const [error, setError] = useState<Error | null>(null);
     const [status, setStatus] = useState<"success" | "error" | "settled" | "pending" | null>(null);
@@ -25,7 +25,7 @@ export const useRemoveWorkspace = () => {
     const isError = useMemo(() => status === "error", [status]);
     const isSettled = useMemo(() => status === "settled", [status]);
 
-    const mutation = useMutation(api.workspaces.remove);
+    const mutation = useMutation(api.channels.create);
 
     const mutate = useCallback(async (values: RequestType, options?: Options) => {
         try {
@@ -37,8 +37,7 @@ export const useRemoveWorkspace = () => {
             options?.onSuccess?.(response);  
             return response;  
         } catch(error) {
-            setStatus("error");
-            options?.onError?.(new Error("An error occurred while updating the workspace"));
+            options?.onError?.(new Error("An error occurred while creating the workspace"));
 
             if (options?.throwError) {
                 throw error;

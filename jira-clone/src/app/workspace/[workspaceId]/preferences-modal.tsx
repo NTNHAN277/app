@@ -11,10 +11,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { useRemoveWorkspace } from "@/features/workspaces/api/use-remove-workspace";
 import { useUpdateWorkspace } from "@/features/workspaces/api/use-update-workspace.ts";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useWorkspaceId } from "@/hooks/use-workspace-id";
 import { TrashIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { FaLeaf } from "react-icons/fa";
 import { toast } from "sonner";
 
 interface PreferencesModelProps {
@@ -28,12 +29,38 @@ export const PreferencesModal = ({
     setOpen,
     initialValue,
 }: PreferencesModelProps) => {
+    const router = useRouter();
     const workspaceId = useWorkspaceId();
     const [value, setValue] = useState(initialValue);
     const [editOpen, setEditOpen] = useState(false);
-
+    const [ConfirmDialog, confirm] = useConfirm(
+        "Are you sure?",
+        "This action is irreversible."
+    );
     const { mutate: updateWorkspace, isPending: isUpdatingWorkspace } = useUpdateWorkspace();
     const { mutate: removeWorkspace, isPending: isRemovingWorkspace } = useRemoveWorkspace();
+
+
+    const handleRemove = async () => {
+        const ok = await confirm();
+
+        if (!ok) return;
+
+
+        removeWorkspace({
+            id: workspaceId
+        }, {
+            onSuccess: () => {
+                toast.success("Workspace removed");
+                router.replace("/");
+            },
+            onError: (error) => {
+                console.error("Failed to remove workspace", error);
+                toast.error("Failed to remove workspace");
+            }
+        });
+        
+    };
 
     const handleEdit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -53,6 +80,8 @@ export const PreferencesModal = ({
     }
 
     return (
+        <>
+        <ConfirmDialog />
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="p-0 bg-gray-50 overflow-hidden">
                 <DialogHeader className="p-4 border-b bg-white">
@@ -106,8 +135,8 @@ export const PreferencesModal = ({
                         </DialogContent>      
                     </Dialog>
                     <button
-                        disabled={false}
-                        onClick={() => {}}
+                        disabled={isRemovingWorkspace}
+                        onClick={handleRemove}
                         className="flex items-center gap-x-2 px-5 py-4 bg-white rounded-lg border cursor-pointer hover:bg-gray-50 text-rose-600"
                     >
                         <TrashIcon className="size-4" />
@@ -116,5 +145,6 @@ export const PreferencesModal = ({
                 </div>
             </DialogContent>
         </Dialog>
+        </>
     );
 };
